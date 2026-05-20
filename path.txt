@@ -1,0 +1,17 @@
+CSE 466 Fall 2023
+	- Program Misuse
+	- Program Interaction
+	- Assembly Crash Course
+	- Debugging Refresher
+
+CSE 466 Fall 2025
+	- Program Security
+	- Reverse Engineering
+	- Return Oriented Programming
+	- Dynamic Allocator Misuse
+	- Program Exploitation
+	- Race Conditions
+	- Sandboxing
+	- Kernel Security
+	- System Exploitation
+
