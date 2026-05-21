@@ -32,3 +32,10 @@ Prologue : Save off the callers base pointer , set current stack pointer as base
 (subtract from stack pointer)
 
 Epilogue : deallocate the stack (mov rsp, rbp) , restore old base pointer
+
+------
+
+--- Tools ---
+
+ltrace : traces library calls
+strace : traces system calls
