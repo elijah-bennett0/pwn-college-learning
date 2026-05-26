@@ -33,11 +33,6 @@ void win()
     if (flag_fd < 0)
     {
         printf("\n  ERROR: Failed to open the flag -- %s!\n", strerror(errno));
-        if (geteuid() != 0)
-        {
-            printf("  Your effective user id is not 0!\n");
-            printf("  You must directly run the suid binary in order to have the correct permissions!\n");
-        }
         exit(-1);
     }
     flag_length = read(flag_fd, flag, sizeof(flag));
