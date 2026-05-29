@@ -1,0 +1,61 @@
+Ill do a writeup for this one considering assembly is a little harder to read sometimes. 
+
+It was very straightforward honestly, I first wanted to disassemble the program to get an idea of whats going
+on. Since I know the structure of these cimg programs, I know its comprised of a 4 byte header and then the 
+version, height, width, and followed by data. I disassembled with `objdump -s -D -M intel cimg | grep -A 20 main`
+which shows 20 instructions after the main function. Honestly this command shows way more than I need but thats
+okay. I noticed immediately:
+
+  4012fc:	80 7c 24 0e 43       	cmp    BYTE PTR [rsp+0xe],0x43
+  401301:	75 15                	jne    401318 <main+0xb4>
+  401303:	80 7c 24 0f 4e       	cmp    BYTE PTR [rsp+0xf],0x4e
+  401308:	75 0e                	jne    401318 <main+0xb4>
+  40130a:	80 7c 24 10 6d       	cmp    BYTE PTR [rsp+0x10],0x6d
+  40130f:	75 07                	jne    401318 <main+0xb4>
+  401311:	80 7c 24 11 47       	cmp    BYTE PTR [rsp+0x11],0x47
+
+well that looks like our header. Then i noticed:
+
+  40132c:	66 83 7c 24 12 01    	cmp    WORD PTR [rsp+0x12],0x1
+  401332:	48 8d 3d fa 0d 00 00 	lea    rdi,[rip+0xdfa]        # 402133 <_IO_stdin_used+0x133>
+  401339:	75 e4                	jne    40131f <main+0xbb>
+  40133b:	66 83 7c 24 14 42    	cmp    WORD PTR [rsp+0x14],0x42
+  401341:	48 8d 3d 07 0e 00 00 	lea    rdi,[rip+0xe07]        # 40214f <_IO_stdin_used+0x14f>
+  401348:	75 d5                	jne    40131f <main+0xbb>
+  40134a:	66 83 7c 24 16 11    	cmp    WORD PTR [rsp+0x16],0x11
+
+which looks like the version, height, and width. Perfect, now the only thing we need is to see how much data
+we need. Well from the previous C program, I already know they use the function read_exact so lets look for that 
+with `objdump -s -D -M intel cimg | grep -A 10 -B 10 read_exact` again, shows too much but i like to be safe. this 
+command shows 10 lines before and after any read_exact matches. Immediately i notice a call to malloc so that 
+should be the amount of data we need:
+
+  401359:	bf 62 04 00 00       	mov    edi,0x462
+  40135e:	e8 5d fe ff ff       	call   4011c0 <malloc@plt>
+
+with a little help from pwntools, our payload is easy to make:
+
+import pwn
+
+header = b''
+payload = b''
+
+# sizes are words so we use p16
+header+=pwn.p16(0x43)
+header+=pwn.p16(0x4e)
+header+=pwn.p16(0x6d)
+header+=pwn.p16(0x47)
+
+payload+=header
+payload+=pwn.p16(0x1)  # version
+payload+=pwn.p16(0x42) # height
+payload+=pwn.p16(0x11) # width
+
+dataSize = int('0x462', 0)
+payload+=b'a'*dataSize
+
+with open('/tmp/test.cimg', 'wb') as f:
+	f.write(payload)
+
+then execute with: `./cimg /tmp/test.cimg`
+
